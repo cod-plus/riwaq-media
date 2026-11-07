@@ -12,7 +12,8 @@ Weeks run Saturday → Friday. The weekly run prepares next week's 7 posts on Th
 3. Check nothing is already scheduled for the target dates (`getScheduledPosts`), so no day gets two posts.
 4. Write `studio/posts/<date>.json` for each day (copy the shape of an existing file). Alternate carousel and clip days unless
    the numbers say otherwise. Rotate stores and topics (see backlog); don't repeat a store clip within 3 weeks.
-5. `cd studio && python3 make.py <dates…>`; then LOOK at every output (contact sheet of the slides, a few frames of each clip)
+5. `cd studio && python3 make.py <dates…>`. Slide 1 / the clip opening is the cover: a store photo (`photo` + `focus`) with a 2–3 line
+   headline (`lines`, `<em>` = gold word) kept inside the centre 3:4 crop. Then LOOK at every output (contact sheet of the slides, a few frames of each clip)
    before publishing anything: text cut off, wrong numbers, empty screens and overlapping elements are blockers.
 6. Commit and push to `main` (the raw URLs are what Metricool downloads).
 7. `python3 payloads.py <date>=<HH:MM> …` → call `createScheduledPost` once per item (blogId `7776769`). Defaults: carousels 10:00,
@@ -51,7 +52,8 @@ Carousel topics: الفرق بين متجر وحساب إنستقرام · تا�
 
 ## Metricool gotchas
 
-- TikTok needs `tiktokData.title` (≤ 90 chars) for photo AND video posts; photo posts use `autoAddMusic: true`.
+- TikTok needs `tiktokData.title` for photo AND video posts. Photo posts: short title (≤ 90 chars) + `autoAddMusic: true`. Video posts:
+  put the FULL caption in `title` (that is what TikTok shows as the description); `text` alone is not enough.
 - `commercialContentOwnBrand: true` (we promote our own business).
 - Instagram: carousel = `type: POST` with several images; clip = `type: REEL` + `videoThumbnailUrl` (cover.jpg).
 - TikTok photos are the `tt-NN.jpg` (1080×1920); Instagram uses `ig-NN.jpg` (1080×1350).

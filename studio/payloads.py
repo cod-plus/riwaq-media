@@ -20,7 +20,8 @@ def payloads(day, hhmm):
         tt = dict(base, media=p["tt"], providers=[{"network": "tiktok"}], tiktokData=dict(tk, autoAddMusic=True, photoCoverIndex=0))
         ig = dict(base, media=p["ig"], providers=[{"network": "instagram"}], instagramData=dict(type="POST", collaborators=[], isAiGenerated=False))
     else:
-        tt = dict(base, media=[p["video"]], videoThumbnailUrl=p["cover"], providers=[{"network": "tiktok"}], tiktokData=tk)
+        # for videos Metricool sends tiktokData.title as the TikTok caption, so it carries the full caption (accepted, tested 7 Nov)
+        tt = dict(base, media=[p["video"]], videoThumbnailUrl=p["cover"], providers=[{"network": "tiktok"}], tiktokData=dict(tk, title=p["caption"]))
         ig = dict(base, media=[p["video"]], videoThumbnailUrl=p["cover"], providers=[{"network": "instagram"}],
                   instagramData=dict(type="REEL", collaborators=[], showReelOnFeed=True, isAiGenerated=False))
     d = dt + "+04:00"
