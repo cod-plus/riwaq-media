@@ -3,6 +3,7 @@ render_carousel(slides, outdir) -> {"ig": [...jpg 1080x1350], "tt": [...jpg 1080
 import os
 from playwright.sync_api import sync_playwright
 from common import (INK, GOLD, SAND, NIGHT, font_css, svg, arch_path, esc, demo_img, file_url, launch, WA_TEXT, SITE_URL, BRAND)
+import cover
 
 SIZES = {"ig": (1080, 1350), "tt": (1080, 1920)}
 CHECK = f'<svg class="chk" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="{GOLD}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -94,7 +95,7 @@ li{display:flex;align-items:flex-start;gap:18px;font-size:%(lfs)dpx;line-height:
 def _css(W, H, kind):
     tt = kind == "tt"
     p = dict(W=W, H=H, INK=INK, GOLD=GOLD, SAND=SAND, NIGHT=NIGHT,
-             pt=150 if tt else 70, pb=400 if tt else 64, pr=170 if tt else 90, pl=90,
+             pt=280 if tt else 70, pb=400 if tt else 64, pr=170 if tt else 90, pl=90,
              gap=40 if tt else 30, kfs=38 if tt else 34, h1=92 if tt else 84, bfs=44 if tt else 40,
              lig=26 if tt else 20, lfs=40 if tt else 36, pfs=150 if tt else 136, ufs=50 if tt else 46,
              nfs=36 if tt else 32, pillfs=42 if tt else 38, urlfs=40 if tt else 36, emw=230 if tt else 200, ctah=76 if tt else 70,
@@ -105,7 +106,18 @@ def _css(W, H, kind):
 def _logo(theme):
     return svg("riwaq-horizontal-dark-transparent.svg" if theme == "dark" else "riwaq-horizontal-transparent.svg")
 
+def photo_hook_html(s, i, n, kind):
+    """Slide 1 as a cover: full-bleed store photo + headline (see cover.py)."""
+    W, H = SIZES[kind]
+    c = dict(photo=_src(s["photo"]), kicker=s.get("kicker", ""), lines=s["lines"], sub=s.get("body", ""))
+    return (f'<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>{font_css()}'
+            f'*{{box-sizing:border-box;margin:0;padding:0}}html,body{{width:{W}px;height:{H}px;overflow:hidden}}'
+            f'body{{-webkit-font-smoothing:antialiased}}{cover.css(W, H, s.get("focus", "50% 62%"))}</style></head>'
+            f'<body><div class="cv">{cover.body(c, pg=f"{i}/{n}", foot="swipe")}</div></body></html>')
+
 def slide_html(s, i, n, kind):
+    if s["t"] == "hook" and s.get("photo"):
+        return photo_hook_html(s, i, n, kind)
     W, H = SIZES[kind]
     theme = s.get("theme", "dark" if s["t"] in ("hook", "cta") else "sand")
     deco_w = 900 if kind == "tt" else 820
@@ -152,7 +164,7 @@ def slide_html(s, i, n, kind):
     return (f'<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>{font_css()}{_css(W, H, kind)}</style></head>'
             f'<body><div class="{cls}">{deco}{top}{mid}{foot}</div></body></html>')
 
-def render_carousel(slides, outdir, kinds=("ig", "tt")):
+def render_carousel(slides, outdir, kinds=("ig", "tt"), tag=""):
     os.makedirs(outdir, exist_ok=True)
     src = os.path.join(outdir, ".src"); os.makedirs(src, exist_ok=True)
     out = {k: [] for k in kinds}
@@ -164,8 +176,9 @@ def render_carousel(slides, outdir, kinds=("ig", "tt")):
             for i, s in enumerate(slides, 1):
                 f = os.path.join(src, f"{kind}-{i:02d}.html")
                 open(f, "w", encoding="utf-8").write(slide_html(s, i, len(slides), kind))
-                pg.goto(file_url(f)); pg.evaluate("document.fonts.ready.then(()=>1)"); pg.wait_for_timeout(120)
-                img = os.path.join(outdir, f"{kind}-{i:02d}.jpg")
+                pg.goto(file_url(f)); pg.evaluate("document.fonts.ready.then(()=>1)"); pg.wait_for_timeout(150)
+                pg.evaluate(cover.FIT_JS); pg.wait_for_timeout(40)
+                img = os.path.join(outdir, f"{kind}-{i:02d}{tag}.jpg")
                 pg.screenshot(path=img, type="jpeg", quality=92); out[kind].append(img)
             pg.context.close()
         b.close()

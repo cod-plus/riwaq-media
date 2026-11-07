@@ -3,7 +3,7 @@ make_clip(spec, outdir) -> {"video": ..., "cover": ...}"""
 import os, json, shutil, subprocess
 from playwright.sync_api import sync_playwright
 from common import (INK, GOLD, SAND, NIGHT, STORES, font_css, svg, esc, demo_img, file_url, launch, SITE_URL, WA_TEXT)
-import capture, sound
+import capture, sound, cover
 
 FPS = 30
 T1, DEMO = 2.4, 8.2                      # hook length, demo length
@@ -16,16 +16,7 @@ SCENE = """<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
 html,body{width:1080px;height:1920px;overflow:hidden;background:%(NIGHT)s}
 body{font-family:"IBM Plex Sans Arabic",sans-serif;-webkit-font-smoothing:antialiased}
 .layer{position:absolute;inset:0;overflow:hidden}
-#hero{position:absolute;inset:-2%%;width:104%%;height:104%%;object-fit:cover;transform-origin:50%% 60%%}
-.shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,34,40,.94) 0%%,rgba(15,34,40,.82) 34%%,rgba(15,34,40,.25) 64%%,rgba(15,34,40,.6) 100%%)}
-.htext{position:absolute;top:210px;right:100px;left:90px;color:%(SAND)s;display:flex;flex-direction:column;gap:26px}
-.tag{align-self:flex-start;display:flex;align-items:center;gap:14px;background:rgba(244,238,227,.12);border:2px solid rgba(200,150,62,.75);
-     color:%(SAND)s;border-radius:999px;padding:10px 26px 10px 30px;font-size:32px;font-weight:600}
-.tag svg{height:40px;width:auto}
-.hk{font-size:64px;font-weight:600;color:%(GOLD)s;line-height:1.25}
-.hl{font-size:106px;font-weight:700;line-height:1.2}
-.hl .ln{display:block}
-.hl em{font-style:normal;color:%(GOLD)s}
+%(cover_css)s
 #demo{background:radial-gradient(90%% 60%% at 70%% 10%%,#1B3E49 0%%,%(NIGHT)s 60%%)}
 .dtop{position:absolute;top:150px;right:110px;left:90px;color:%(SAND)s;display:flex;flex-direction:column;gap:14px}
 .sname{font-size:56px;font-weight:700}
@@ -45,9 +36,7 @@ body{font-family:"IBM Plex Sans Arabic",sans-serif;-webkit-font-smoothing:antial
 #cta .url{background:%(NIGHT)s;color:%(SAND)s;border-radius:999px;padding:20px 48px;font-size:42px;font-weight:600;direction:ltr;letter-spacing:.5px}
 .u{display:block;will-change:transform,opacity}
 </style></head><body>
-<div id="hook" class="layer"><img id="hero" src="%(hero)s"><div class="shade"></div>
- <div class="htext"><div class="tag u" id="tag">%(emblem_small)s<span>%(tag)s</span></div>
-  <div class="hk u" id="hk">%(kicker)s</div><div class="hl" id="hl">%(lines)s</div></div></div>
+<div id="hook" class="layer"><div class="cv">%(cover_body)s</div></div>
 <div id="demo" class="layer" style="opacity:0">
  <div class="dtop"><div class="sname u" id="sname">%(sname)s <small>· %(scat)s</small></div><div class="feat u" id="feat">%(feat)s</div></div>
  <div class="phone u" id="phone"><div class="screen"><div class="island"></div><div class="status"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div><img id="scr"></div></div>
@@ -65,9 +54,11 @@ function show(el,p,dy){el.style.opacity=p;el.style.transform=`translateY(${(1-p)
 let cur=-1;
 function seek(t){
   const h=1-C(T1,T1+.3,t); $('hook').style.opacity=h;
-  $('hero').style.transform=`scale(${1.13-0.1*E(t/T1)})`;
-  show($('tag'),1,0); show($('hk'),1,0);
-  [...document.querySelectorAll('#hl .ln')].forEach((l,i)=>{const p=O(C(i*.12,.32+i*.12,t));l.style.opacity=.55+.45*p;l.style.transform=`translateY(${(1-p)*26}px)`});
+  $('cvimg').style.transform=`scale(${1.16-0.11*E(t/T1)})`;
+  show(document.querySelector('.cv-k'),.7+.3*O(C(0,.3,t)),14);
+  [...document.querySelectorAll('.cv-h .ln')].forEach((l,i)=>{const p=O(C(.05+i*.12,.45+i*.12,t));l.style.opacity=.72+.28*p;l.style.transform=`translateY(${(1-p)*22}px)`});
+  const sb=document.querySelector('.cv-s'); if(sb) show(sb,.7+.3*O(C(.4,.9,t)),18);
+  show($('cvpill'),.7+.3*O(C(.5,1.0,t)),16);
   const d=C(T1,T1+.3,t)*(1-C(T2+.45,T2+.5,t)); $('demo').style.opacity=d;
   $('phone').style.transform=`translateY(${(1-E(C(T1,T1+.6,t)))*300}px)`;
   show($('sname'),O(C(T1+.15,T1+.5,t)),30); show($('feat'),O(C(T1+.5,T1+.9,t)),30);
@@ -83,12 +74,13 @@ function seek(t){
 def scene_html(spec, frames):
     st = STORES.get(spec["store"], {})
     hero = spec.get("hero") or (demo_img(spec["store"], st.get("hero", "hero.webp")) if st.get("hero") else "")
-    lines = "".join(f'<span class="ln">{l}</span>' for l in spec["lines"])
+    c = dict(photo=hero, kicker=spec["kicker"], lines=spec["lines"], sub=spec.get("sub", ""))
     dark_store = st.get("bg", "#fff").lower() in ("#100c09", "#5e0e1c", "#120b08")
     return SCENE % dict(
-        fonts=font_css(), NIGHT=NIGHT, SAND=SAND, INK=INK, GOLD=GOLD, hero=hero,
-        tag=esc(spec.get("tag", "متجر من رواق")), kicker=esc(spec["kicker"]), lines=lines,
-        emblem_small=svg("riwaq-emblem-white.svg"), emblem=svg("riwaq-emblem.svg"),
+        fonts=font_css(), NIGHT=NIGHT, SAND=SAND, INK=INK, GOLD=GOLD,
+        cover_css=cover.css(1080, 1920, spec.get("focus", "50% 62%")),
+        cover_body=cover.body(c, foot=spec.get("foot", "جرّبه من جوالك")),
+        emblem=svg("riwaq-emblem.svg"),
         sname=esc(spec.get("sname", st.get("name", ""))), scat=esc(spec.get("scat", st.get("cat", ""))),
         feat=esc(spec.get("feat", st.get("feat", ""))), sbg=st.get("bg", "#fff"), sink="#fff" if dark_store else "#111",
         cta_title=esc(spec.get("cta_title", "متجرك الجاي يكون بهويتك")), wa=esc(spec.get("wa", WA_TEXT)),
@@ -96,7 +88,7 @@ def scene_html(spec, frames):
         url=esc(spec.get("url", f"{SITE_URL}/{spec['store']}")),
         T1=T1, T2=T2, FPS=FPS, frames=json.dumps([file_url(f) for f in frames]))
 
-def make_clip(spec, outdir, keep_frames=False):
+def make_clip(spec, outdir, keep_frames=False, tag=""):
     os.makedirs(outdir, exist_ok=True)
     work = os.path.join(outdir, ".work"); os.makedirs(work, exist_ok=True)
     shots = capture.capture(spec["store"], os.path.join(work, "screen"), DEMO,
@@ -104,23 +96,24 @@ def make_clip(spec, outdir, keep_frames=False):
     html_p = os.path.join(work, "scene.html")
     open(html_p, "w", encoding="utf-8").write(scene_html(spec, shots))
     fdir = os.path.join(work, "frames"); os.makedirs(fdir, exist_ok=True)
-    n = int(round(TOTAL * FPS)); cover = os.path.join(outdir, "cover.jpg")
+    n = int(round(TOTAL * FPS)); cover_jpg = os.path.join(outdir, f"cover{tag}.jpg")
     with sync_playwright() as p:
         b = launch(p)
         pg = b.new_context(viewport={"width": 1080, "height": 1920}, device_scale_factor=1).new_page()
         pg.goto(file_url(html_p)); pg.evaluate("document.fonts.ready.then(()=>1)"); pg.wait_for_timeout(300)
+        pg.evaluate(cover.FIT_JS)
         for f in range(n):
             pg.evaluate("t => seek(t)", f / FPS)
             pg.screenshot(path=os.path.join(fdir, "f%05d.jpg" % f), type="jpeg", quality=90)
-        pg.evaluate("t => seek(t)", 1.2); pg.screenshot(path=cover, type="jpeg", quality=92)
+        pg.evaluate("t => seek(t)", 1.3); pg.screenshot(path=cover_jpg, type="jpeg", quality=92)
         b.close()
     wav = sound.make(os.path.join(work, "music.wav"), TOTAL, T1, T2, seed=spec.get("seed", 3))
-    video = os.path.join(outdir, "clip.mp4")
+    video = os.path.join(outdir, f"clip{tag}.mp4")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", os.path.join(fdir, "f%05d.jpg"), "-i", wav,
                     "-c:v", "libx264", "-preset", "veryfast", "-crf", "19", "-pix_fmt", "yuv420p", "-r", str(FPS),
                     "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", video], check=True)
     if not keep_frames: shutil.rmtree(work, ignore_errors=True)
-    return {"video": video, "cover": cover}
+    return {"video": video, "cover": cover_jpg}
 
 if __name__ == "__main__":
     import sys
