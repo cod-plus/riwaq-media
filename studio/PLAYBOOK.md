@@ -18,7 +18,31 @@ Weeks run Saturday → Friday. The weekly run prepares next week's 7 posts on Th
 6. Commit and push to `main` (the raw URLs are what Metricool downloads).
 7. `python3 payloads.py <date>=<HH:MM> …` → call `createScheduledPost` once per item (blogId `7776769`). Defaults: carousels 10:00,
    clips 18:00 (check `getBestTimeToPostByNetwork`). Verify with `getScheduledPosts`: exactly 2 posts per day.
-8. Tell the owner in a few lines of Emirati Arabic what is scheduled and what last week's numbers say.
+8. Sales funnel (the plan «خطة رواق للمليون»): read the tracker's database with `ArtifactData` — url
+   `https://claude.ai/artifact/UVUmYoZcLo46RckFS7PRXD`, collection `shops` (page through with the cursor). Each doc has
+   `added`, `demo_sent`, `replied_at`, `call_at`, `won_at` (YYYY-MM-DD, Dubai) and `amount`. Count, for the week
+   Saturday→Friday that ends today: shops added, demos sent, replies, calls, sales, revenue. Targets 40 / 20 / 6 / 3 / 1–2 /
+   2,500–5,000. Apply the plan's rules: replies < 20% of demos → targeting or first line; calls < half of replies → offer the
+   call earlier, by voice note; sales < a third of calls → objections; demos < 20 → speed up the template.
+9. Tell the owner in a few lines of Emirati Arabic: what is scheduled, what last week's posts did, and the funnel numbers
+   against the targets with the one rule that fires (or «على المسار»).
+
+## Quick demo for a real shop (نموذج مجاني)
+
+The plan's engine: a demo before the first message. When the owner sends a shop (name, Instagram handle, 6–9 product photos
+with prices, the emirate), build it in `cod-plus/riwaq-site-` (push access):
+
+1. Photos → `.prospect-photos/<slug>/` (01.jpg …; a file named `hero.jpg` becomes the hero; otherwise p1 is reused).
+2. Spec → `src/stores/prospects/<slug>.json` (copy `_example.json`): `from` = the template of the same trade (batla ورد,
+   qand حلويات, lujain عبايات, hail قهوة وتمور, abaq عطور, yaqoot مجوهرات, nabd إكسسوارات), `name`, `latin`, `prefix`,
+   `colors` from their feed (bg / ink / accent), a `hero` line in their voice, `products` (name + price, sub/desc optional),
+   `replace` pairs for the template's places and hours, `expires` = 7 days ahead, `instagram`.
+3. `cd src/stores && python3 newdemo.py prospects/<slug>.json --site`, look at `public/n/<slug>/` on a phone viewport
+   (name on one line, 6+ products, photos not stretched), then commit and push `main`. Cloudflare deploys in a minute:
+   `https://riwaquae.com/n/<slug>/`.
+4. Put the link in the tracker doc (`demo_url`) and give the owner the link plus the first message from the plan, filled in.
+   Never invent facts about the shop; prices and names come from their own posts. `python3 newdemo.py --remove <slug>`
+   when the demo expires or the shop declines.
 
 ## Voice and rules
 

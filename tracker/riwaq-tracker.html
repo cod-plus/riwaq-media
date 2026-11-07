@@ -1,0 +1,419 @@
+<title>متابعة رواق</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: phone-first single column (max 760px). A dark ink band on top carries this week's six numbers against the plan's
+   targets; below it the working list (today's follow-ups, the pipeline, the weekly history) on sand. One gold accent. */
+:root{
+  --bg:#F6F1E8; --card:#FFFFFF; --fg:#142B33; --muted:#5F6F75; --line:#E3DACB; --soft:#EFE7D8;
+  --accent:#C8963E; --accent-fg:#142B33; --band:#142B33; --band-2:#1B3A45; --band-fg:#F4EEE3; --band-muted:#A9B9BE;
+  --ok:#2F7D5B; --warn:#B9771E; --bad:#B23F2F; --ok-soft:#DFF0E7; --warn-soft:#F7E8CF; --bad-soft:#F6DCD7;
+  --font:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+  --r:14px; --shadow:0 10px 30px rgba(20,43,51,.12);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F2228; --card:#15303A; --fg:#F4EEE3; --muted:#A9B7BB; --line:#24424C; --soft:#1C3842;
+  --accent:#D9A94E; --accent-fg:#0F2228; --band:#0A181D; --band-2:#11272F; --band-fg:#F4EEE3; --band-muted:#8FA3A9;
+  --ok:#5DB58E; --warn:#E0A24E; --bad:#E07A68; --ok-soft:#1B3D32; --warn-soft:#3F3320; --bad-soft:#44241F;
+  --shadow:0 10px 30px rgba(0,0,0,.4); color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0F2228; --card:#15303A; --fg:#F4EEE3; --muted:#A9B7BB; --line:#24424C; --soft:#1C3842;
+  --accent:#D9A94E; --accent-fg:#0F2228; --band:#0A181D; --band-2:#11272F; --band-fg:#F4EEE3; --band-muted:#8FA3A9;
+  --ok:#5DB58E; --warn:#E0A24E; --bad:#E07A68; --ok-soft:#1B3D32; --warn-soft:#3F3320; --bad-soft:#44241F;
+  --shadow:0 10px 30px rgba(0,0,0,.4); color-scheme:dark }
+
+*{box-sizing:border-box}
+html{direction:rtl}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--band);z-index:10}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* band */
+.band{background:linear-gradient(160deg,var(--band-2),var(--band) 70%);color:var(--band-fg);padding-block:22px 26px}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.2px;text-wrap:balance}
+.brand h1 small{display:block;font-size:13px;font-weight:500;color:var(--band-muted);margin-top:2px}
+.live{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--band-muted)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--band-muted);display:inline-block}
+.live.on i{background:#6FCF97;box-shadow:0 0 0 4px rgba(111,207,151,.18)}
+.live.bad i{background:var(--bad)}
+.weekhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:18px;flex-wrap:wrap}
+.weekhead h2{margin:0;font-size:15px;font-weight:600;color:var(--band-muted)}
+.weekhead h2 b{color:var(--band-fg);font-weight:600}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+@media (max-width:420px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:12px 12px 10px;min-width:0}
+.tile .l{font-size:12.5px;color:var(--band-muted);font-weight:500}
+.tile .v{display:flex;align-items:baseline;gap:6px;margin-top:2px}
+.tile .v b{font-size:28px;font-weight:700;line-height:1.1}
+.tile .v span{font-size:12.5px;color:var(--band-muted)}
+.bar{height:5px;border-radius:3px;background:rgba(255,255,255,.12);margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--accent);transition:width .4s ease}
+.bar i.done{background:#6FCF97}
+.diag{margin-top:14px;display:flex;gap:10px;align-items:flex-start;background:rgba(200,150,62,.12);border:1px solid rgba(200,150,62,.35);border-radius:var(--r);padding:10px 12px;font-size:14px;line-height:1.5}
+.diag.ok{background:rgba(111,207,151,.1);border-color:rgba(111,207,151,.3)}
+.diag .ic{flex:none;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:700;font-size:13px}
+.diag.ok .ic{background:#6FCF97}
+
+/* sections */
+section{margin-top:22px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
+.sh h2{margin:0;font-size:17px;font-weight:700}
+.sh .c{font-size:13px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.empty{padding:18px 16px;color:var(--muted);font-size:14.5px;text-align:center}
+
+/* rows */
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);width:100%;text-align:start}
+.row:first-child{border-top:0}
+.row:hover{background:color-mix(in srgb,var(--soft) 55%,transparent)}
+.row .main{flex:1;min-width:0}
+.row .n{font-weight:600;font-size:15.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.row .n .h{font-weight:400;font-size:13px;color:var(--muted);direction:ltr;unicode-bidi:isolate}
+.row .m{font-size:13px;color:var(--muted);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap}
+.row .m .dot::before{content:"·";margin-inline-end:6px}
+.row .side{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--fg);white-space:nowrap}
+.pill.list{background:var(--soft)} .pill.demo{background:#E9EEF5;color:#2F4F6E} .pill.replied{background:var(--warn-soft);color:var(--warn)}
+.pill.call{background:#EDE4F7;color:#5C3E8A} .pill.won{background:var(--ok-soft);color:var(--ok)} .pill.later{background:var(--soft);color:var(--muted)} .pill.lost{background:var(--bad-soft);color:var(--bad)}
+:root[data-theme="dark"] .pill.demo,:root:not([data-theme="light"]) .pill.demo{background:#213B4E;color:#BFD6EA}
+:root[data-theme="dark"] .pill.call{background:#3A2E52;color:#D9C8F2}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pill.call{background:#3A2E52;color:#D9C8F2}}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .pill.demo{background:#E9EEF5;color:#2F4F6E}}
+.due{font-size:12px;color:var(--muted);white-space:nowrap}
+.due.over{color:var(--bad);font-weight:600}
+.due.today{color:var(--warn);font-weight:600}
+.hint{font-size:13px;color:var(--accent);font-weight:600;margin-top:3px}
+
+/* chips */
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13.5px;font-weight:500;color:var(--fg)}
+.chip b{font-weight:600;color:var(--muted);margin-inline-start:4px}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip[aria-pressed="true"] b{color:inherit;opacity:.75}
+.search{display:flex;gap:8px;margin-bottom:10px}
+.search input{flex:1;min-width:0;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px}
+
+/* table */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th,td{padding:9px 10px;text-align:start;border-top:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:12.5px;border-top:0}
+tr.target td{color:var(--accent);font-weight:600}
+tr.cur td{font-weight:600}
+td.z{color:var(--muted)}
+
+/* fab + sheet */
+.fab{position:fixed;inset-inline-start:max(16px,env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));height:54px;padding:0 20px 0 16px;border-radius:999px;background:var(--accent);color:var(--accent-fg);font-weight:700;font-size:16px;box-shadow:var(--shadow);display:inline-flex;align-items:center;gap:8px;z-index:5}
+.fab span{font-size:24px;line-height:1;margin-top:-2px}
+.scrim{position:fixed;inset:0;background:rgba(10,24,29,.5);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;inset-inline:0;bottom:0;z-index:21;background:var(--card);color:var(--fg);border-radius:22px 22px 0 0;max-height:92dvh;overflow:auto;transform:translateY(105%);visibility:hidden;transition:transform .25s ease,visibility 0s .25s;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+.sheet.open{transform:none;visibility:visible;transition-delay:0s}
+.sheet .inner{max-width:720px;margin:0 auto}
+.grab{width:44px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+.sheet h3{margin:0 0 4px;font-size:18px;font-weight:700}
+.sheet .sub{color:var(--muted);font-size:13.5px;margin-bottom:12px}
+.acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 16px}
+.act{border:1px solid var(--line);border-radius:12px;padding:11px 10px;font-weight:600;font-size:14.5px;text-align:center;background:var(--bg);line-height:1.3}
+.act.gold{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.act.good{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.act.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.act.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.act small{display:block;font-weight:400;font-size:12px;opacity:.8}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.form .full{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:500;min-width:0}
+label.f input,label.f select,label.f textarea{border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;font-size:15px;color:var(--fg);background:var(--bg);width:100%;min-width:0}
+label.f textarea{min-height:68px;resize:vertical}
+label.f input.ltr{direction:ltr;text-align:left}
+.sheet .foot{display:flex;gap:10px;margin-top:16px;align-items:center;flex-wrap:wrap}
+.btn{border-radius:12px;padding:11px 18px;font-weight:700;font-size:15px}
+.btn.primary{background:var(--fg);color:var(--bg)}
+.btn.ghost{border:1px solid var(--line)}
+.btn.danger{color:var(--bad);margin-inline-start:auto;font-weight:600;font-size:14px}
+.note{font-size:13px;color:var(--muted)}
+.banner{margin-top:14px;padding:10px 14px;border-radius:12px;background:var(--warn-soft);color:var(--warn);font-size:14px;font-weight:500}
+.banner.bad{background:var(--bad-soft);color:var(--bad)}
+.toast{position:fixed;bottom:calc(84px + env(safe-area-inset-bottom,0px));inset-inline-end:16px;background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:12px;font-size:14px;font-weight:600;z-index:30;opacity:0;transform:translateY(8px);transition:all .25s}
+.toast.show{opacity:1;transform:none}
+footer{margin:34px 0 110px;color:var(--muted);font-size:13px;text-align:center}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<header class="band">
+  <div class="wrap">
+    <div class="brand">
+      <h1>متابعة رواق <small>المحلات، النماذج، الردود، البيعات. الأسبوع من السبت إلى الجمعة.</small></h1>
+      <div class="live" id="live"><i></i><span id="livetxt">يحمّل…</span></div>
+    </div>
+    <div class="weekhead"><h2>هذا الأسبوع <b id="wk"></b></h2><h2 id="todaytxt"></h2></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="diag" id="diag" hidden><div class="ic">!</div><div id="diagtxt"></div></div>
+    <div id="banner"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <div class="sh"><h2>اليوم</h2><span class="c" id="duec"></span></div>
+    <div class="card" id="duelist"></div>
+  </section>
+
+  <section>
+    <div class="sh"><h2>المحلات</h2><span class="c" id="allc"></span></div>
+    <div class="chips" id="chips" role="group" aria-label="فلترة حسب الحالة"></div>
+    <div class="search"><input id="q" type="search" placeholder="ابحث باسم المحل أو الحساب" autocomplete="off"></div>
+    <div class="card" id="list"></div>
+  </section>
+
+  <section>
+    <div class="sh"><h2>أرقامك كل أسبوع</h2><span class="c">الصف الأول هو الهدف</span></div>
+    <div class="card tbl"><table id="hist"></table></div>
+  </section>
+
+  <footer>كل تغيير ينحفظ لحاله. الأرقام تنحسب من تواريخ المحلات نفسها.</footer>
+</main>
+
+<button class="fab" id="fab" type="button"><span>+</span> محل جديد</button>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-title">
+  <div class="inner">
+    <div class="grab"></div>
+    <h3 id="sh-title">محل جديد</h3>
+    <div class="sub" id="sh-sub"></div>
+    <div class="acts" id="acts"></div>
+    <form class="form" id="form" autocomplete="off">
+      <label class="f full">اسم المحل<input id="f-name" required placeholder="مثال: ورد الياسمين"></label>
+      <label class="f">حساب إنستقرام<input id="f-handle" class="ltr" placeholder="handle" inputmode="text"></label>
+      <label class="f">المتابعين (تقريباً)<input id="f-followers" class="ltr num" type="number" min="0" step="100" inputmode="numeric"></label>
+      <label class="f">النوع<select id="f-cat"></select></label>
+      <label class="f">الإمارة<select id="f-emirate"></select></label>
+      <label class="f">المصدر<select id="f-source"></select></label>
+      <label class="f">الحالة<select id="f-status"></select></label>
+      <label class="f">المتابعة الجاية<input id="f-next" type="date"></label>
+      <label class="f">قيمة البيعة (د.إ)<input id="f-amount" class="ltr num" type="number" min="0" step="50" inputmode="numeric"></label>
+      <label class="f full">رابط النموذج<input id="f-demo" class="ltr" type="url" placeholder="https://riwaquae.com/…"></label>
+      <label class="f full">ملاحظات<textarea id="f-notes" placeholder="شو شفت في حسابهم؟ شو قالوا؟"></textarea></label>
+    </form>
+    <div class="foot">
+      <button class="btn primary" id="save" type="button">حفظ</button>
+      <button class="btn ghost" id="close" type="button">إغلاق</button>
+      <button class="btn danger" id="del" type="button" hidden>حذف</button>
+    </div>
+    <div class="note" id="dates"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ---------- plan constants (from «خطة رواق للمليون») ----------
+const TARGET = { added: 40, demos: 20, replies: 6, calls: 3, sales: [1, 2], revenue: [2500, 5000] };
+const CATS = ["ورد", "حلويات", "عبايات", "عطور", "قهوة وتمور", "إكسسوارات", "مجوهرات", "أخرى"];
+const EMIRATES = ["", "دبي", "الشارقة", "أبوظبي", "عجمان", "العين", "رأس الخيمة", "الفجيرة", "أم القيوين"];
+const SOURCES = ["إنستقرام", "سناب شات", "خرائط قوقل", "تيك توك", "سوق / معرض", "قروب", "شبكتي", "شريك", "إحالة عميل"];
+const STATUS = { list: "قائمة", demo: "نموذج أُرسل", replied: "رد", call: "مكالمة", won: "بيعة", later: "لاحقاً", lost: "ما رد" };
+const OPEN = ["list", "demo", "replied", "call", "later"];
+const FU = [2, 5, 12];                     // follow-ups: day 2 (voice note), day 5 (demo expires), day 12 (last)
+const TZ = "Asia/Dubai";
+const M = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+const DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+
+// ---------- dates (strings YYYY-MM-DD, Dubai calendar) ----------
+const today = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ });
+const toD = s => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+const fmt = d => d.toISOString().slice(0, 10);
+const addDays = (s, n) => { const d = toD(s); d.setUTCDate(d.getUTCDate() + n); return fmt(d); };
+const weekStart = s => { const d = toD(s); d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 1) % 7); return fmt(d); };   // Saturday
+const daysBetween = (a, b) => Math.round((toD(b) - toD(a)) / 864e5);
+const dayName = s => DAYS[toD(s).getUTCDay()];
+function weekLabel(ws) { const a = toD(ws), b = toD(addDays(ws, 6));
+  return a.getUTCMonth() === b.getUTCMonth() ? `${a.getUTCDate()}–${b.getUTCDate()} ${M[a.getUTCMonth()]}`
+    : `${a.getUTCDate()} ${M[a.getUTCMonth()]} – ${b.getUTCDate()} ${M[b.getUTCMonth()]}`; }
+const shortDate = s => s ? `${toD(s).getUTCDate()} ${M[toD(s).getUTCMonth()]}` : "";
+const fmtN = n => Number(n || 0).toLocaleString("en-US");
+
+// ---------- state ----------
+let shops = [], db = null, col = null, readOnly = false, filter = "open", q = "", editing = null, confirmDel = false, writing = false;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// ---------- derived ----------
+function weekStats(ws) { const we = addDays(ws, 6), inW = s => s && s >= ws && s <= we;
+  const r = { added: 0, demos: 0, replies: 0, calls: 0, sales: 0, revenue: 0 };
+  for (const s of shops) { if (inW(s.added)) r.added++; if (inW(s.demo_sent)) r.demos++; if (inW(s.replied_at)) r.replies++;
+    if (inW(s.call_at)) r.calls++; if (inW(s.won_at)) { r.sales++; r.revenue += Number(s.amount) || 0; } }
+  return r; }
+function lastTouch(s) { return [s.won_at, s.call_at, s.replied_at, s.demo_sent, s.added].filter(Boolean).sort().pop() || s.added; }
+function hintFor(s) {
+  if (s.status === "list") return "أرسل الرسالة الأولى مع النموذج";
+  if (s.status === "demo") { const fu = s.fu || 0;
+    if (fu === 0) return "متابعة ١: رسالة صوتية 30 ثانية «شفتوا النموذج؟»";
+    if (fu === 1) return `متابعة ٢: «النموذج يظل شغال لين ${shortDate(addDays(s.demo_sent || today(), 7))}»`;
+    return "الرسالة الأخيرة: «آخر رسالة مني، وبالتوفيق»"; }
+  if (s.status === "replied") return "اعرض مكالمة دقيقتين، أو اتصل لو عطوك رقم";
+  if (s.status === "call") return "اقفل: أرسل رابط الدفعة الأولى";
+  if (s.status === "later") return "أرسل فيديو جديد واسأل عن الوقت المناسب";
+  return ""; }
+function diagnose(r, ws) {
+  const t = today(), di = Math.min(6, Math.max(0, daysBetween(ws, t)));        // 0 = Saturday
+  if (r.demos < 5) return { ok: true, text: di <= 1 ? "بداية الأسبوع. الهدف 5 نماذج كل يوم من الأحد للأربعاء." : "لسا بدري على الحكم. كمّل النماذج وبعدين نقرأ الأرقام." };
+  const out = [];
+  if (r.demos >= 10 && r.replies / r.demos < 0.2) out.push("الردود أقل من 20% من النماذج: المشكلة في اختيار المحلات أو الجملة الأولى، مب النموذج.");
+  if (r.replies >= 4 && r.calls / r.replies < 0.5) out.push("المكالمات أقل من نص الردود: اعرض المكالمة أبكر، وبرسالة صوتية مب كتابة.");
+  if (r.calls >= 3 && r.sales / r.calls < 1 / 3) out.push("البيعات أقل من ثلث المكالمات: راجع جدول الاعتراضات واكتب كل اعتراض جديد.");
+  if (di >= 4 && r.demos < 5 * Math.min(4, di)) out.push("النماذج أقل من المعدّل (5 باليوم): سرّع القالب أو قلّل التفاصيل في النموذج.");
+  if (!out.length) return { ok: true, text: r.sales >= 1 ? "على المسار، وفي بيعة هالأسبوع. كمّل بنفس الإيقاع." : "الأرقام على المسار. كمّل نفس الإيقاع، البيعة تجي من المتابعة." };
+  return { ok: false, text: out.join(" ") }; }
+
+// ---------- render ----------
+function render() {
+  const t = today(), ws = weekStart(t), r = weekStats(ws);
+  $("wk").textContent = weekLabel(ws);
+  $("todaytxt").textContent = `${dayName(t)} ${shortDate(t)}`;
+  const tiles = [
+    ["محلات أضفتها", r.added, TARGET.added, `من ${TARGET.added}`],
+    ["نماذج أرسلتها", r.demos, TARGET.demos, `من ${TARGET.demos}`],
+    ["ردود", r.replies, TARGET.replies, `من ${TARGET.replies}`],
+    ["مكالمات", r.calls, TARGET.calls, `من ${TARGET.calls}`],
+    ["بيعات", r.sales, TARGET.sales[0], `الهدف ${TARGET.sales[0]}–${TARGET.sales[1]}`],
+    ["إيراد (د.إ)", r.revenue, TARGET.revenue[0], `الهدف ${fmtN(TARGET.revenue[0])}–${fmtN(TARGET.revenue[1])}`]];
+  $("tiles").innerHTML = tiles.map(([l, v, tg, sub]) => { const p = Math.min(100, Math.round(100 * v / tg));
+    return `<div class="tile"><div class="l">${l}</div><div class="v"><b class="num">${fmtN(v)}</b><span>${sub}</span></div><div class="bar"><i class="${p >= 100 ? "done" : ""}" style="width:${p}%"></i></div></div>`; }).join("");
+  const d = diagnose(r, ws); $("diag").hidden = false; $("diag").className = "diag" + (d.ok ? " ok" : ""); $("diag").querySelector(".ic").textContent = d.ok ? "✓" : "!"; $("diagtxt").textContent = d.text;
+
+  // today
+  const due = shops.filter(s => OPEN.includes(s.status) && s.next && s.next <= t).sort((a, b) => (a.next || "").localeCompare(b.next || "") || rank(a) - rank(b));
+  $("duec").textContent = due.length ? `${due.length} متابعة` : "";
+  $("duelist").innerHTML = due.length ? due.map(rowHTML).join("") : `<div class="empty">${shops.length ? "ما عليك متابعات اليوم. أضف محلات جديدة أو أرسل نماذج." : "ابدأ بإضافة أول محل."}</div>`;
+
+  // chips
+  const counts = { all: shops.length, open: shops.filter(s => OPEN.includes(s.status)).length };
+  for (const k in STATUS) counts[k] = shops.filter(s => s.status === k).length;
+  const chipDefs = [["open", "النشطة"], ["all", "الكل"], ...Object.entries(STATUS)];
+  $("chips").innerHTML = chipDefs.map(([k, l]) => `<button class="chip" type="button" data-f="${k}" aria-pressed="${filter === k}">${l}<b class="num">${counts[k]}</b></button>`).join("");
+  $("allc").textContent = `${shops.length} محل`;
+
+  // list
+  const ql = q.trim().toLowerCase();
+  let rows = shops.filter(s => filter === "all" || (filter === "open" ? OPEN.includes(s.status) : s.status === filter));
+  if (ql) rows = rows.filter(s => (s.name || "").toLowerCase().includes(ql) || (s.handle || "").toLowerCase().includes(ql) || (s.notes || "").toLowerCase().includes(ql));
+  rows.sort((a, b) => rank(a) - rank(b) || (a.next || "9").localeCompare(b.next || "9") || (b.updated || "").localeCompare(a.updated || ""));
+  $("list").innerHTML = rows.length ? rows.map(rowHTML).join("") : `<div class="empty">${shops.length ? "ما في محلات بهذا الفلتر." : "القائمة فاضية. اضغط «محل جديد» وابدأ."}</div>`;
+
+  // history
+  const first = shops.map(s => s.added).filter(Boolean).sort()[0];
+  let w0 = weekStart(first && first < "2026-11-07" ? first : "2026-11-07"); const weeks = [];
+  for (let w = w0; w <= ws; w = addDays(w, 7)) weeks.push(w);
+  const head = `<tr><th>الأسبوع</th><th>محلات</th><th>نماذج</th><th>ردود</th><th>مكالمات</th><th>بيعات</th><th>إيراد</th></tr>`;
+  const tgt = `<tr class="target"><td>الهدف</td><td class="num">${TARGET.added}</td><td class="num">${TARGET.demos}</td><td class="num">${TARGET.replies}</td><td class="num">${TARGET.calls}</td><td class="num">${TARGET.sales[0]}–${TARGET.sales[1]}</td><td class="num">${fmtN(TARGET.revenue[0])}–${fmtN(TARGET.revenue[1])}</td></tr>`;
+  const body = weeks.slice().reverse().map(w => { const x = weekStats(w), z = v => `<td class="num${v ? "" : " z"}">${fmtN(v)}</td>`;
+    return `<tr class="${w === ws ? "cur" : ""}"><td>${weekLabel(w)}${w === ws ? " (الحالي)" : ""}</td>${z(x.added)}${z(x.demos)}${z(x.replies)}${z(x.calls)}${z(x.sales)}${z(x.revenue)}</tr>`; }).join("");
+  $("hist").innerHTML = head + tgt + body;
+}
+const RANK = { call: 0, replied: 1, demo: 2, list: 3, later: 4, won: 5, lost: 6 };
+const rank = s => RANK[s.status] ?? 9;
+function rowHTML(s) { const t = today();
+  const over = s.next && OPEN.includes(s.status) ? (s.next < t ? "over" : s.next === t ? "today" : "") : "";
+  const nextTxt = s.next && OPEN.includes(s.status) ? (over === "over" ? `متأخر ${daysBetween(s.next, t)} يوم` : over === "today" ? "اليوم" : shortDate(s.next)) : (s.won_at ? shortDate(s.won_at) : "");
+  const meta = [s.category, s.emirate, s.followers ? `${fmtN(s.followers)} متابع` : "", s.fu ? `متابعة ${s.fu}` : ""].filter(Boolean);
+  return `<button class="row" type="button" data-id="${esc(s.id)}">
+    <div class="main"><div class="n">${esc(s.name)}${s.handle ? `<span class="h">@${esc(s.handle)}</span>` : ""}</div>
+      <div class="m">${meta.map((m, i) => `<span class="${i ? "dot" : ""}">${esc(m)}</span>`).join("")}</div>
+      ${over ? `<div class="hint">${esc(hintFor(s))}</div>` : ""}</div>
+    <div class="side"><span class="pill ${esc(s.status)}">${STATUS[s.status] || s.status}</span>${nextTxt ? `<span class="due ${over}">${nextTxt}</span>` : ""}</div></button>`; }
+
+// ---------- sheet ----------
+function fillSelect(id, opts, labels) { $(id).innerHTML = opts.map((o, i) => `<option value="${esc(o)}">${esc(labels ? labels[i] : (o || "—"))}</option>`).join(""); }
+fillSelect("f-cat", CATS); fillSelect("f-emirate", EMIRATES); fillSelect("f-source", SOURCES); fillSelect("f-status", Object.keys(STATUS), Object.values(STATUS));
+function openSheet(s) { editing = s || null; confirmDel = false;
+  $("sh-title").textContent = s ? s.name : "محل جديد";
+  $("sh-sub").textContent = s ? [s.handle ? "@" + s.handle : "", `أُضيف ${shortDate(s.added)}`, s.source].filter(Boolean).join(" · ") : "عبّي الاسم والحساب والنوع. الباقي لاحقاً.";
+  $("f-name").value = s?.name || ""; $("f-handle").value = s?.handle || ""; $("f-followers").value = s?.followers || "";
+  $("f-cat").value = s?.category || CATS[0]; $("f-emirate").value = s?.emirate || ""; $("f-source").value = s?.source || SOURCES[0];
+  $("f-status").value = s?.status || "list"; $("f-next").value = s?.next || (s ? "" : today()); $("f-amount").value = s?.amount || "";
+  $("f-demo").value = s?.demo_url || ""; $("f-notes").value = s?.notes || "";
+  $("del").hidden = !s; $("del").textContent = "حذف";
+  $("acts").innerHTML = s ? actionsHTML(s) : ""; $("acts").hidden = !s;
+  $("dates").textContent = s ? ["النموذج " + shortDate(s.demo_sent), "الرد " + shortDate(s.replied_at), "المكالمة " + shortDate(s.call_at), "البيعة " + shortDate(s.won_at)].filter(x => !/ $/.test(x)).join(" · ") : "";
+  $("scrim").classList.add("open"); $("sheet").classList.add("open"); setTimeout(() => $(s ? "f-notes" : "f-name").focus(), 250); }
+function closeSheet() { $("scrim").classList.remove("open"); $("sheet").classList.remove("open"); editing = null; }
+function actionsHTML(s) { const a = [];
+  if (["list", "later", "lost"].includes(s.status)) a.push(["demo", "gold", "أرسلت النموذج", "يحسب نموذج اليوم، متابعة بعد يومين"]);
+  if (s.status === "demo") { const fu = s.fu || 0; a.push(["replied", "good", "رد", "يحسب رد اليوم"]);
+    a.push(["fu", "warn", fu < 2 ? `تابعت، ما رد (${fu + 1})` : "الرسالة الأخيرة، ما رد", fu < 2 ? `المتابعة الجاية بعد ${FU[fu + 1] - FU[fu]} أيام` : "ينتقل إلى «ما رد»"]); }
+  if (s.status === "replied") { a.push(["call", "gold", "سوينا مكالمة", "يحسب مكالمة اليوم"]); a.push(["won", "good", "بيعة", "اختر الباقة بعدها"]); }
+  if (s.status === "call") { a.push(["won", "good", "بيعة", "يحسب بيعة اليوم"]); a.push(["fu", "warn", "تابعت بعد المكالمة", "متابعة ثانية بعد 3 أيام"]); }
+  if (OPEN.includes(s.status) && s.status !== "later") a.push(["later", "", "لاحقاً", "يرجع بعد شهر بمحتوى"]);
+  if (OPEN.includes(s.status)) a.push(["lost", "bad", "ما رد / رفض", "يطلع من المتابعات"]);
+  if (s.status === "won") a.push(["referral", "good", "اطلب الإحالات والفيديو", "فيديو 30 ثانية + اسمين"]);
+  if (["lost", "won"].includes(s.status)) a.push(["list", "", "رجّعه للقائمة", "يبدأ من جديد"]);
+  return a.map(([k, c, l, sub]) => `<button class="act ${c}" type="button" data-act="${k}">${l}<small>${sub}</small></button>`).join(""); }
+function applyAct(s, k) { const t = today(), p = { status: s.status };
+  if (k === "demo") Object.assign(p, { status: "demo", demo_sent: t, fu: 0, next: addDays(t, FU[0]) });
+  if (k === "replied") Object.assign(p, { status: "replied", replied_at: s.replied_at || t, next: t });
+  if (k === "call") Object.assign(p, { status: "call", call_at: s.call_at || t, next: addDays(t, 2) });
+  if (k === "won") Object.assign(p, { status: "won", won_at: t, next: "", amount: Number(s.amount) || 2500 });
+  if (k === "fu") { if (s.status === "call") Object.assign(p, { next: addDays(t, 3) });
+    else { const fu = (s.fu || 0) + 1; const base = s.demo_sent || t;
+      if (fu >= 3) Object.assign(p, { fu, status: "lost", next: "" }); else Object.assign(p, { fu, next: addDays(base, FU[fu]) }); } }
+  if (k === "later") Object.assign(p, { status: "later", next: addDays(t, 30) });
+  if (k === "lost") Object.assign(p, { status: "lost", next: "" });
+  if (k === "list") Object.assign(p, { status: "list", next: t, fu: 0 });
+  if (k === "referral") Object.assign(p, { next: addDays(t, 7), notes: (s.notes ? s.notes + "\n" : "") + `${shortDate(t)}: طلبت فيديو رأي + إذن العرض + اسمين.` });
+  return p; }
+function readForm() { return {
+  name: $("f-name").value.trim(), handle: $("f-handle").value.trim().replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//, "").replace(/\/.*$/, ""),
+  followers: Number($("f-followers").value) || 0, category: $("f-cat").value, emirate: $("f-emirate").value, source: $("f-source").value,
+  status: $("f-status").value, next: $("f-next").value, amount: Number($("f-amount").value) || 0, demo_url: $("f-demo").value.trim(), notes: $("f-notes").value.trim() }; }
+
+// ---------- writes ----------
+function toast(m, bad) { const el = $("toast"); el.textContent = m; el.style.background = bad ? "var(--bad)" : ""; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 2200); }
+async function write(fn, okMsg) { if (!col) return toast("ما في اتصال بالبيانات", true); if (readOnly) return toast("هذي النسخة للقراءة بس", true); if (writing) return;
+  writing = true; try { await fn(); if (okMsg) toast(okMsg); }
+  catch (e) { if (e && e.code === "invalid_argument") { readOnly = true; showBanner("ما عندك صلاحية تعديل هالصفحة. افتحها من حساب رواق."); } toast("ما انحفظ: " + (e?.message || e), true); }
+  finally { writing = false; } }
+async function saveForm() { const f = readForm(); if (!f.name) { $("f-name").focus(); return toast("اكتب اسم المحل", true); }
+  const now = new Date().toISOString();
+  if (editing) { const patch = { ...f, updated: now }; if (f.status !== editing.status) { if (f.status === "won" && !editing.won_at) patch.won_at = today(); if (f.status === "demo" && !editing.demo_sent) patch.demo_sent = today(); if (f.status === "replied" && !editing.replied_at) patch.replied_at = today(); if (f.status === "call" && !editing.call_at) patch.call_at = today(); }
+    await write(() => col.doc(editing.id).update(patch), "انحفظ"); }
+  else { const doc = { ...f, added: today(), fu: 0, created: now, updated: now }; if (!doc.next) doc.next = today();
+    await write(() => col.add(doc), "أُضيف " + f.name); }
+  closeSheet(); }
+function showBanner(m, bad) { $("banner").innerHTML = m ? `<div class="banner ${bad ? "bad" : ""}">${esc(m)}</div>` : ""; }
+
+// ---------- events ----------
+$("fab").onclick = () => openSheet(null);
+$("scrim").onclick = closeSheet; $("close").onclick = closeSheet; $("save").onclick = saveForm;
+$("form").addEventListener("submit", e => { e.preventDefault(); saveForm(); });
+$("del").onclick = async () => { if (!editing) return; if (!confirmDel) { confirmDel = true; $("del").textContent = "متأكد؟ اضغط مرة ثانية للحذف"; return; }
+  const id = editing.id; await write(() => col.doc(id).delete(), "انحذف"); closeSheet(); };
+$("acts").addEventListener("click", async e => { const b = e.target.closest("[data-act]"); if (!b || !editing) return;
+  const s = editing, k = b.dataset.act, p = applyAct(s, k); p.updated = new Date().toISOString();
+  await write(() => col.doc(s.id).update(p), k === "won" ? "مبروك 🎉" : "تم"); closeSheet(); });
+document.addEventListener("click", e => { const r = e.target.closest(".row[data-id]"); if (r) { const s = shops.find(x => x.id === r.dataset.id); if (s) openSheet(s); }
+  const c = e.target.closest(".chip[data-f]"); if (c) { filter = c.dataset.f; render(); } });
+$("q").addEventListener("input", e => { q = e.target.value; render(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("sheet").classList.contains("open")) closeSheet(); });
+
+// ---------- data ----------
+render();
+(async () => {
+  const live = $("live"), lt = $("livetxt");
+  db = await window.claude?.use?.("db");
+  if (!db) { live.className = "live bad"; lt.textContent = "بدون اتصال"; showBanner("ما قدرت أوصل قاعدة البيانات. افتح الصفحة من حساب رواق على claude.ai.", true); return; }
+  col = db.collection("shops");
+  let timer = setTimeout(() => { lt.textContent = "البيانات ما وصلت بعد"; live.className = "live"; }, 10000);
+  col.onSnapshot(snap => { shops = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!snap.metadata.fromCache) { clearTimeout(timer); live.className = "live on"; lt.textContent = "محفوظ"; }
+    render(); }, err => { clearTimeout(timer); live.className = "live bad"; lt.textContent = "خطأ"; showBanner("انقطع الاتصال بالبيانات (" + err.code + "). أعد فتح الصفحة.", true); });
+  const user = await window.claude?.use?.("user"); const can = await user?.can?.("data.write");
+  if (can === false) { readOnly = true; showBanner("تشوف الصفحة للقراءة بس. التعديل من حساب رواق."); }
+})();
+</script>
