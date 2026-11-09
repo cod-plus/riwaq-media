@@ -56,9 +56,13 @@ with prices, the emirate), build it in `cod-plus/riwaq-site-` (push access):
     up to ٣٠ products in Arabic and English, card / Tabby / Tamara / cash on delivery, own domain, Instagram + TikTok linking,
     delivery in ٥ working days + one hour of training. After delivery: platform subscription only (~145 د.إ/month); optional monthly
     follow-up 450 د.إ/month.
-  - «متجر وتشغيل» 4,500 د.إ in two payments (2,250 + 2,250): everything above + up to ١٠٠ products, product photography and
-    descriptions, shipping / tax / invoice setup, ٣ TikTok launch videos, one month of follow-up and edits free. Optional
-    «إدارة ونمو» 1,200 د.إ/month.
+  - «متجر وتشغيل» 4,500 د.إ in two payments (2,250 + 2,250): everything above + up to ١٠٠ products, product descriptions
+    written for them («كتابة وصف المنتجات»), shipping / tax / invoice setup, ٣ TikTok launch videos, one month of follow-up and
+    edits free. Optional «إدارة ونمو» 1,200 د.إ/month.
+  - RIWAQ does NOT photograph products (owner, 9 Nov 2026). Never offer or imply product photography in any package, caption or
+    slide. General tips on photographing with a phone are fine as advice, not as a service.
+  - Monthly plans (riwaquae.com/pay): «متابعة شهرية» 450 د.إ/month = edits, follow-up and support; «إدارة ونمو»
+    1,200 د.إ/month = running the store, content and ads.
   - Second payment only after the owner receives and tries the store.
   - Dashboard (riwaquae.com/demos/admin): orders arrive the moment the customer pays; status updates in one tap and the customer
     gets a WhatsApp message; add a product with three fields (name, price, quantity); payments and delivery from the phone.
